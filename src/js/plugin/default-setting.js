@@ -14,6 +14,6 @@ module.exports = {
   wheelPropagation: false,
   wheelSpeed: 1,
   theme: 'default',
-  getTopOffset: () => 0,
-  getBottomOffset: () => 0,
+  getTopOffset: function () { return 0; },
+  getBottomOffset: function () { return 0; }
 };
