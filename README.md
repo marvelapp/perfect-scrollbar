@@ -328,6 +328,14 @@ The number of pixels the content width can surpass the container width without e
 The number of pixels the content height can surpass the container height without enabling the Y axis scroll bar. Allows some "wiggle room" or "offset break", so that Y axis scroll bar is not enabled just because of a few pixels.  
 **Default**: `0`
 
+### getTopOffset()
+Function to return the number of pixels the Y axis scroll bar is offset from the top of the container.
+**Default**: `0`
+
+### getBottomOffset()
+Function to return the number of pixels the Y axis scroll bar is offset from the bottom of the container.
+**Default**: `0`
+
 ### stopPropagationOnClick
 When set to false, when clicking on a rail, the click event will be allowed to propagate.  
 **Default**: `true`
