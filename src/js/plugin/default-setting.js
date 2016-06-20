@@ -13,5 +13,7 @@ module.exports = {
   useBothWheelAxes: false,
   wheelPropagation: false,
   wheelSpeed: 1,
-  theme: 'default'
+  theme: 'default',
+  getTopOffset: function () { return 0; },
+  getBottomOffset: function () { return 0; }
 };
