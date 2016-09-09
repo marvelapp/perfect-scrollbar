@@ -1,4 +1,4 @@
-/* perfect-scrollbar v0.6.11 */
+/* perfect-scrollbar v0.6.12 */
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
@@ -497,7 +497,7 @@ function bindMouseScrollYHandler(element, i) {
   var currentPageY = null;
 
   function updateScrollTop(deltaY) {
-    var newTop = currentTop + (deltaY * i.railYRatio);
+    var newTop = currentTop + ((deltaY - i.settings.getTopOffset()) * i.railYRatio);
     var maxTop = Math.max(0, i.scrollbarYRail.getBoundingClientRect().top) + (i.railYRatio * (i.railYHeight - i.scrollbarYHeight));
 
     if (newTop < 0) {
@@ -586,7 +586,7 @@ function bindKeyboardHandler(element, i) {
   }
 
   i.event.bind(i.ownerDocument, 'keydown', function (e) {
-    if (e.isDefaultPrevented && e.isDefaultPrevented()) {
+    if ((e.isDefaultPrevented && e.isDefaultPrevented()) || e.defaultPrevented) {
       return;
     }
 
@@ -1072,6 +1072,11 @@ function bindTouchHandler(element, i, supportsTouch, supportsIePointer) {
           return;
         }
 
+        if (!speed.x && !speed.y) {
+          clearInterval(easingLoop);
+          return;
+        }
+
         if (Math.abs(speed.x) < 0.01 && Math.abs(speed.y) < 0.01) {
           clearInterval(easingLoop);
           return;
@@ -1403,29 +1408,14 @@ module.exports = function (element) {
 
 var instances = require('./instances');
 
-var upEvent = document.createEvent('Event');
-var downEvent = document.createEvent('Event');
-var leftEvent = document.createEvent('Event');
-var rightEvent = document.createEvent('Event');
-var yEvent = document.createEvent('Event');
-var xEvent = document.createEvent('Event');
-var xStartEvent = document.createEvent('Event');
-var xEndEvent = document.createEvent('Event');
-var yStartEvent = document.createEvent('Event');
-var yEndEvent = document.createEvent('Event');
 var lastTop;
 var lastLeft;
 
-upEvent.initEvent('ps-scroll-up', true, true);
-downEvent.initEvent('ps-scroll-down', true, true);
-leftEvent.initEvent('ps-scroll-left', true, true);
-rightEvent.initEvent('ps-scroll-right', true, true);
-yEvent.initEvent('ps-scroll-y', true, true);
-xEvent.initEvent('ps-scroll-x', true, true);
-xStartEvent.initEvent('ps-x-reach-start', true, true);
-xEndEvent.initEvent('ps-x-reach-end', true, true);
-yStartEvent.initEvent('ps-y-reach-start', true, true);
-yEndEvent.initEvent('ps-y-reach-end', true, true);
+var createDOMEvent = function (name) {
+  var event = document.createEvent("Event");
+  event.initEvent(name, true, true);
+  return event;
+};
 
 module.exports = function (element, axis, value) {
   if (typeof element === 'undefined') {
@@ -1442,12 +1432,12 @@ module.exports = function (element, axis, value) {
 
   if (axis === 'top' && value <= 0) {
     element.scrollTop = value = 0; // don't allow negative scroll
-    element.dispatchEvent(yStartEvent);
+    element.dispatchEvent(createDOMEvent('ps-y-reach-start'));
   }
 
   if (axis === 'left' && value <= 0) {
     element.scrollLeft = value = 0; // don't allow negative scroll
-    element.dispatchEvent(xStartEvent);
+    element.dispatchEvent(createDOMEvent('ps-x-reach-start'));
   }
 
   var i = instances.get(element);
@@ -1461,7 +1451,7 @@ module.exports = function (element, axis, value) {
     } else {
       element.scrollTop = value;
     }
-    element.dispatchEvent(yEndEvent);
+    element.dispatchEvent(createDOMEvent('ps-y-reach-end'));
   }
 
   if (axis === 'left' && value >= i.contentWidth - i.containerWidth) {
@@ -1473,7 +1463,7 @@ module.exports = function (element, axis, value) {
     } else {
       element.scrollLeft = value;
     }
-    element.dispatchEvent(xEndEvent);
+    element.dispatchEvent(createDOMEvent('ps-x-reach-end'));
   }
 
   if (!lastTop) {
@@ -1485,29 +1475,29 @@ module.exports = function (element, axis, value) {
   }
 
   if (axis === 'top' && value < lastTop) {
-    element.dispatchEvent(upEvent);
+    element.dispatchEvent(createDOMEvent('ps-scroll-up'));
   }
 
   if (axis === 'top' && value > lastTop) {
-    element.dispatchEvent(downEvent);
+    element.dispatchEvent(createDOMEvent('ps-scroll-down'));
   }
 
   if (axis === 'left' && value < lastLeft) {
-    element.dispatchEvent(leftEvent);
+    element.dispatchEvent(createDOMEvent('ps-scroll-left'));
   }
 
   if (axis === 'left' && value > lastLeft) {
-    element.dispatchEvent(rightEvent);
+    element.dispatchEvent(createDOMEvent('ps-scroll-right'));
   }
 
   if (axis === 'top') {
     element.scrollTop = lastTop = value;
-    element.dispatchEvent(yEvent);
+    element.dispatchEvent(createDOMEvent('ps-scroll-y'));
   }
 
   if (axis === 'left') {
     element.scrollLeft = lastLeft = value;
-    element.dispatchEvent(xEvent);
+    element.dispatchEvent(createDOMEvent('ps-scroll-x'));
   }
 
 };
