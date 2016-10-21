@@ -328,6 +328,18 @@ The number of pixels the content width can surpass the container width without e
 The number of pixels the content height can surpass the container height without enabling the Y axis scroll bar. Allows some "wiggle room" or "offset break", so that Y axis scroll bar is not enabled just because of a few pixels.  
 **Default**: `0`
 
+### getTopOffset()
+Function to return the number of pixels the Y axis scroll bar is offset from the top of the container.
+**Default**: `0`
+
+### getBottomOffset()
+Function to return the number of pixels the Y axis scroll bar is offset from the bottom of the container.
+**Default**: `0`
+
+### stopPropagationOnClick
+When set to false, when clicking on a rail, the click event will be allowed to propagate.  
+**Default**: `true`
+
 ### theme
 A string. It's a class name added to the container element. The class name is prepended with `ps-theme-`. So default theme class name is `ps-theme-default`. In order to create custom themes with scss use `ps-container($theme)` mixin, where `$theme` is a scss map.  
 **Default**: `'default'`
@@ -409,7 +421,7 @@ $(document).on('ps-scroll-x', function () {
 
 ### Scrolling children inside perfect-scrollbar
 
-You can natively scroll children inside `perfect-scrollbar` with the mouse-wheel. Scrolling automatically works if 
+You can natively scroll children inside `perfect-scrollbar` with the mouse-wheel. Scrolling automatically works if
 the child is a `textarea`. All other elements need to have the `ps-child` class. This is demonstrated in [`/examples/children-native-scroll.html`](examples/children-native-scroll.html)
 
 ## IE Support

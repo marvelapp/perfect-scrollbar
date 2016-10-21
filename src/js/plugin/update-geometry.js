@@ -47,7 +47,10 @@ function updateCss(element, i) {
   dom.css(i.scrollbarYRail, yRailOffset);
 
   dom.css(i.scrollbarX, {left: i.scrollbarXLeft, width: i.scrollbarXWidth - i.railBorderXWidth});
-  dom.css(i.scrollbarY, {top: i.scrollbarYTop, height: i.scrollbarYHeight - i.railBorderYWidth});
+  dom.css(i.scrollbarY, {
+    top: i.scrollbarYTop + i.settings.getTopOffset(),
+    height: i.scrollbarYHeight - i.settings.getTopOffset() - i.settings.getBottomOffset() - i.railBorderYWidth
+  });
 }
 
 module.exports = function (element) {
