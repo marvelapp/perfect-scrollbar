@@ -421,7 +421,7 @@ $(document).on('ps-scroll-x', function () {
 
 ### Scrolling children inside perfect-scrollbar
 
-You can natively scroll children inside `perfect-scrollbar` with the mouse-wheel. Scrolling automatically works if 
+You can natively scroll children inside `perfect-scrollbar` with the mouse-wheel. Scrolling automatically works if
 the child is a `textarea`. All other elements need to have the `ps-child` class. This is demonstrated in [`/examples/children-native-scroll.html`](examples/children-native-scroll.html)
 
 ## IE Support
