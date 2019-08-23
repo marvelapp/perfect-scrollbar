@@ -1,6 +1,6 @@
 /*!
  * perfect-scrollbar v1.4.0
- * (c) 2018 Hyunje Jun
+ * (c) 2019 Hyunje Jun
  * @license MIT
  */
 function get(element) {
@@ -56,6 +56,7 @@ function queryChildren(element, selector) {
 
 var cls = {
   main: 'ps',
+  rtl: 'ps__rtl',
   element: {
     thumb: function (x) { return ("ps__thumb-" + x); },
     rail: function (x) { return ("ps__rail-" + x); },
@@ -308,6 +309,8 @@ var env = {
   supportsTouch:
     typeof window !== 'undefined' &&
     ('ontouchstart' in window ||
+      ('maxTouchPoints' in window.navigator &&
+        window.navigator.maxTouchPoints > 0) ||
       (window.DocumentTouch && document instanceof window.DocumentTouch)),
   supportsIePointer:
     typeof navigator !== 'undefined' && navigator.msMaxTouchPoints,
@@ -321,10 +324,11 @@ var updateGeometry = function(i) {
   var roundedScrollTop = Math.floor(element.scrollTop);
   var rect = element.getBoundingClientRect();
 
+  var fixedHeaderFooterHeight = i.settings.getTopOffset() + i.settings.getBottomOffset();
   i.containerWidth = Math.ceil(rect.width);
-  i.containerHeight = Math.ceil(rect.height);
+  i.containerHeight = Math.ceil(rect.height) - fixedHeaderFooterHeight;
   i.contentWidth = element.scrollWidth;
-  i.contentHeight = element.scrollHeight;
+  i.contentHeight = element.scrollHeight - fixedHeaderFooterHeight;
 
   if (!element.contains(i.scrollbarXRail)) {
     // clean up and append
@@ -394,7 +398,7 @@ var updateGeometry = function(i) {
     element.classList.remove(cls.state.active('x'));
     i.scrollbarXWidth = 0;
     i.scrollbarXLeft = 0;
-    element.scrollLeft = 0;
+    element.scrollLeft = i.isRtl === true ? i.contentWidth : 0;
   }
   if (i.scrollbarYActive) {
     element.classList.add(cls.state.active('y'));
@@ -436,14 +440,15 @@ function updateCss(element, i) {
   }
   set(i.scrollbarXRail, xRailOffset);
 
-  var yRailOffset = { top: roundedScrollTop, height: i.railYHeight };
+  var yRailOffset = { top: roundedScrollTop + i.settings.getTopOffset(), height: i.railYHeight };
   if (i.isScrollbarYUsingRight) {
     if (i.isRtl) {
       yRailOffset.right =
         i.contentWidth -
         (i.negativeScrollAdjustment + element.scrollLeft) -
         i.scrollbarYRight -
-        i.scrollbarYOuterWidth;
+        i.scrollbarYOuterWidth -
+        9;
     } else {
       yRailOffset.right = i.scrollbarYRight - element.scrollLeft;
     }
@@ -546,6 +551,9 @@ function bindMouseScrollHandler(
   var scrollBy = null;
 
   function mouseMoveHandler(e) {
+    if (e.touches && e.touches[0]) {
+      e[pageY] = e.touches[0].pageY;
+    }
     element[scrollTop] =
       startingScrollTop + scrollBy * (e[pageY] - startingMousePageY);
     addScrollingClass(i, y);
@@ -561,20 +569,33 @@ function bindMouseScrollHandler(
     i.event.unbind(i.ownerDocument, 'mousemove', mouseMoveHandler);
   }
 
-  i.event.bind(i[scrollbarY], 'mousedown', function (e) {
+  function bindMoves(e, touchMode) {
     startingScrollTop = element[scrollTop];
+    if (touchMode && e.touches) {
+      e[pageY] = e.touches[0].pageY;
+    }
     startingMousePageY = e[pageY];
     scrollBy =
       (i[contentHeight] - i[containerHeight]) /
       (i[railYHeight] - i[scrollbarYHeight]);
-
-    i.event.bind(i.ownerDocument, 'mousemove', mouseMoveHandler);
-    i.event.once(i.ownerDocument, 'mouseup', mouseUpHandler);
+    if (!touchMode) {
+      i.event.bind(i.ownerDocument, 'mousemove', mouseMoveHandler);
+      i.event.once(i.ownerDocument, 'mouseup', mouseUpHandler);
+      e.preventDefault();
+    } else {
+      i.event.bind(i.ownerDocument, 'touchmove', mouseMoveHandler);
+    }
 
     i[scrollbarYRail].classList.add(cls.state.clicking);
 
     e.stopPropagation();
-    e.preventDefault();
+  }
+
+  i.event.bind(i[scrollbarY], 'mousedown', function (e) {
+    bindMoves(e);
+  });
+  i.event.bind(i[scrollbarY], 'touchstart', function (e) {
+    bindMoves(e, true);
   });
 }
 
@@ -793,26 +814,26 @@ var wheel = function(i) {
       }
 
       var style = get(cursor);
-      var overflow = [style.overflow, style.overflowX, style.overflowY].join(
-        ''
-      );
 
-      // if scrollable
-      if (overflow.match(/(scroll|auto)/)) {
+      // if deltaY && vertical scrollable
+      if (deltaY && style.overflowY.match(/(scroll|auto)/)) {
         var maxScrollTop = cursor.scrollHeight - cursor.clientHeight;
         if (maxScrollTop > 0) {
           if (
-            !(cursor.scrollTop === 0 && deltaY > 0) &&
-            !(cursor.scrollTop === maxScrollTop && deltaY < 0)
+            (cursor.scrollTop > 0 && deltaY < 0) ||
+            (cursor.scrollTop < maxScrollTop && deltaY > 0)
           ) {
             return true;
           }
         }
+      }
+      // if deltaX && horizontal scrollable
+      if (deltaX && style.overflowX.match(/(scroll|auto)/)) {
         var maxScrollLeft = cursor.scrollWidth - cursor.clientWidth;
         if (maxScrollLeft > 0) {
           if (
-            !(cursor.scrollLeft === 0 && deltaX < 0) &&
-            !(cursor.scrollLeft === maxScrollLeft && deltaX > 0)
+            (cursor.scrollLeft > 0 && deltaX < 0) ||
+            (cursor.scrollLeft < maxScrollLeft && deltaX > 0)
           ) {
             return true;
           }
@@ -981,26 +1002,26 @@ var touch = function(i) {
       }
 
       var style = get(cursor);
-      var overflow = [style.overflow, style.overflowX, style.overflowY].join(
-        ''
-      );
 
-      // if scrollable
-      if (overflow.match(/(scroll|auto)/)) {
+      // if deltaY && vertical scrollable
+      if (deltaY && style.overflowY.match(/(scroll|auto)/)) {
         var maxScrollTop = cursor.scrollHeight - cursor.clientHeight;
         if (maxScrollTop > 0) {
           if (
-            !(cursor.scrollTop === 0 && deltaY > 0) &&
-            !(cursor.scrollTop === maxScrollTop && deltaY < 0)
+            (cursor.scrollTop > 0 && deltaY < 0) ||
+            (cursor.scrollTop < maxScrollTop && deltaY > 0)
           ) {
             return true;
           }
         }
-        var maxScrollLeft = cursor.scrollLeft - cursor.clientWidth;
+      }
+      // if deltaX && horizontal scrollable
+      if (deltaX && style.overflowX.match(/(scroll|auto)/)) {
+        var maxScrollLeft = cursor.scrollWidth - cursor.clientWidth;
         if (maxScrollLeft > 0) {
           if (
-            !(cursor.scrollLeft === 0 && deltaX < 0) &&
-            !(cursor.scrollLeft === maxScrollLeft && deltaX > 0)
+            (cursor.scrollLeft > 0 && deltaX < 0) ||
+            (cursor.scrollLeft < maxScrollLeft && deltaX > 0)
           ) {
             return true;
           }
@@ -1100,6 +1121,8 @@ var defaultSettings = function () { return ({
   useBothWheelAxes: false,
   wheelPropagation: true,
   wheelSpeed: 1,
+  getTopOffset: function () { return 0; },
+  getBottomOffset: function () { return 0; },
 }); };
 
 var handlers = {
@@ -1140,6 +1163,9 @@ var PerfectScrollbar = function PerfectScrollbar(element, userSettings) {
   var blur = function () { return element.classList.remove(cls.state.focus); };
 
   this.isRtl = get(element).direction === 'rtl';
+  if (this.isRtl === true) {
+    element.classList.add(cls.rtl);
+  }
   this.isNegativeScroll = (function () {
     var originalScrollLeft = element.scrollLeft;
     var result = null;

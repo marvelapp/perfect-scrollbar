@@ -8,10 +8,11 @@ export default function(i) {
   const roundedScrollTop = Math.floor(element.scrollTop);
   const rect = element.getBoundingClientRect();
 
+  const fixedHeaderFooterHeight = i.settings.getTopOffset() + i.settings.getBottomOffset();
   i.containerWidth = Math.ceil(rect.width);
-  i.containerHeight = Math.ceil(rect.height);
+  i.containerHeight = Math.ceil(rect.height) - fixedHeaderFooterHeight;
   i.contentWidth = element.scrollWidth;
-  i.contentHeight = element.scrollHeight;
+  i.contentHeight = element.scrollHeight - fixedHeaderFooterHeight;
 
   if (!element.contains(i.scrollbarXRail)) {
     // clean up and append
@@ -125,7 +126,7 @@ function updateCss(element, i) {
   }
   CSS.set(i.scrollbarXRail, xRailOffset);
 
-  const yRailOffset = { top: roundedScrollTop, height: i.railYHeight };
+  const yRailOffset = { top: roundedScrollTop + i.settings.getTopOffset(), height: i.railYHeight };
   if (i.isScrollbarYUsingRight) {
     if (i.isRtl) {
       yRailOffset.right =
