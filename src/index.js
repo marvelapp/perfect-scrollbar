@@ -25,6 +25,8 @@ const defaultSettings = () => ({
   useBothWheelAxes: false,
   wheelPropagation: true,
   wheelSpeed: 1,
+  getTopOffset: () => 0,
+  getBottomOffset: () => 0,
 });
 
 const handlers = {
